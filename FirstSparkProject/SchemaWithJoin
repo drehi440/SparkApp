@@ -98,17 +98,17 @@ object SchemaWithJoin {
       println(count)
       
       //generate the rdd mapping for Row() on the basis of count of rddCols.
-       def RowCountMethod(x:Any, y:Long):Any ={
+        def RowCountMethod(x:Any, y:Long):Row ={
        for(i<- 0 to y.toInt-1){
            if(i==0)
              createRowSplit.append(x+"("+i.toString()+")")
            else
              createRowSplit.append(","+x+"("+i.toString()+")")
          }
-       createRowSplit.toList.map { _+"" }
+       Row.apply(createRowSplit)
      }
       
-      var rdd1 = sc.textFile(path,2).map { x => x.split(",") }.map { x => Row(x(0),x(1),x(2),x(3)) }
+      var rdd1 = sc.textFile(path,2).map { x => x.split(",") }.map { x => RowCountMethod(x, count/*Row(x(0),x(1),x(2),x(3)*/) }
       println("Sucessfull mapped rdd to Row Schema")
       println("Initiate apply Schema")
       var tb = hiveContext.createDataFrame(rdd1,schema)

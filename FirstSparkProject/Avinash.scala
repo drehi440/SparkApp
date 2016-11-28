@@ -27,9 +27,10 @@ object Avinash {
   def main(args: Array[String]): Unit = {
       println("This is spark Running!")
       val conf = new SparkConf().setAppName("SparkSQL").setMaster("local[*]")
+      
       val sc = new SparkContext(conf)
       val sqlContext = new HiveContext(sc)//new org.apache.spark.sql.hive.HiveContext(sc)
-    
+    sqlContext.setConf("spark.sql.retainGroupColumns", "false")
       println("This is Inside Spark!===========> sc:"+sc.getClass+" ++++||+++ SqlContext:"+sqlContext.getClass)
 
       import sqlContext.implicits._
@@ -79,15 +80,14 @@ object Avinash {
       
 
       println("AGGREGATION STATUS========================================================>STARTED!")
-//      groupBy("DATE").agg($"Date", max("age"), sum("expense"))
-        val monthSegTable = newTable.withColumn("MONTH", month($"DATE")).show()
-        
-//        monthSegTable.groupBy("MS_ID","YEAR","MONTH").agg(avg("UV_INDEX").as("AVG_INDEX")).show()
-  
-  
-  //if the query is prepared just insert into this sql statement and save it as registerTempTable
-        val implementedTable = sqlContext.sql("").registerTempTable("tb1")
-
-
+//      groupBy("DATE").agg($"Date", max("age"), sum("expense"))1/1/2010
+        val monthSegTable = newTable.select($"DATE", $"MS_ID", $"UV_INDEX", month(from_unixtime(unix_timestamp($"DATE","MM/dd/yyyy"),"yyyy-MM-dd").cast("date")).as("MONTH"),
+            year(from_unixtime(unix_timestamp($"DATE","MM/dd/yyyy"),"yyyy-MM-dd").cast("date")).as("YEAR")).registerTempTable("FinalTable")
+            
+            
+       println("AGGREGATION STATUS========================================================>MONTH AND YEAR CREATED")
+       
+       sqlContext.sql("select t.month,t.year,max(t.date) as END_DATE,min(t.date) as START_DATE,t.avgIndex from (select year(DATE)as year,month(DATE) as month,DATE as date,avg(cast(UV_INDEX as INT)) as avgIndex from FinalTable) t group by t.year, t.month").show()
+       //        monthSegTable.agg(min("DATE"), max("DATE")).show()//groupBy("MONTH").agg(min("DATE"), max("DATE")).show()
   }
 }
